@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Walentynka — galaktyczna edycja</title>
+  <style>
+    :root{
+      --bg1:#050507;
+      --bg2:#0b0b10;
+      --glass: rgba(255,255,255,.05);
+      --glass2: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.10);
+      --text: rgba(255,255,255,.94);
+      --muted: rgba(255,255,255,.66);
+      --yellow:#D9002B;
+      --good:#D9002B;
+      --bad:#7A0C18;
+      --shadow: 0 24px 70px rgba(0,0,0,.65);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background: radial-gradient(1200px 800px at 50% 30%, #12050b 0%, var(--bg1) 55%, #000 100%);
+      overflow:hidden;
+    }
+
+    /* Canvas (gwiazdy) */
+    #stars{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index:0;
+    }
+
+    /* Subtelna mgiełka */
+    .vignette{
+      position:fixed;
+      inset:-2px;
+      background:
+        radial-gradient(900px 600px at 50% 45%, rgba(255,255,255,.04), transparent 60%),
+        radial-gradient(1000px 650px at 50% 60%, rgba(217,0,43,.10), transparent 62%),
+        radial-gradient(800px 500px at 50% 40%, rgba(122,12,24,.10), transparent 58%),
+        radial-gradient(1200px 900px at 50% 50%, transparent 40%, rgba(0,0,0,.55) 100%);
+      z-index:1;
+      pointer-events:none;
+    }
+
+    .wrap{
+      position:relative;
+      z-index:2;
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .card{
+      width:min(520px, 92vw);
+      border-radius:18px;
+      background: linear-gradient(180deg, var(--glass), rgba(255,255,255,.04));
+      border:1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      padding:22px 22px 18px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* “Lightsaber glow” obręczy */
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius:20px;
+      background:
+        conic-gradient(from 180deg,
+          rgba(217,0,43,.0) 0deg,
+          rgba(217,0,43,.35) 70deg,
+          rgba(255,255,255,.18) 140deg,
+          rgba(217,0,43,.40) 210deg,
+          rgba(122,12,24,.32) 300deg,
+          rgba(217,0,43,.0) 360deg);
+      filter: blur(14px);
+      opacity:.55;
+      z-index:-1;
+      animation: spin 8s linear infinite;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color:var(--muted);
+      font-size:13px;
+      letter-spacing:.3px;
+    }
+    .badge .dot{
+      width:8px;height:8px;border-radius:999px;
+      background:var(--yellow);
+      box-shadow: 0 0 18px rgba(217,0,43,.55);
+    }
+
+    h1{
+      margin:16px 0 6px;
+      font-size:22px;
+      line-height:1.25;
+      font-weight:750;
+      letter-spacing:.2px;
+      text-align:center;
+    }
+    .subtitle{
+      margin:0 0 16px;
+      text-align:center;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .emoji{
+      display:grid;
+      place-items:center;
+      width:56px;height:56px;
+      margin:12px auto 0;
+      border-radius:0;
+      background: transparent;
+      border:0;
+      font-size:28px;
+    }
+    .emoji img{
+      width:44px;
+      height:44px;
+      display:block;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,.55));
+    }
+    .emoji.logo{
+      width:112px;
+      height:112px;
+      background: transparent;
+      border:0;
+      border-radius:0;
+      margin-top:6px;
+    }
+    .emoji.logo img{
+      width:104px;
+      height:auto;
+    }
+
+    .btns{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      margin-top:16px;
+      padding-bottom:6px;
+    }
+
+    button{
+      border:0;
+      border-radius:999px;
+      padding:11px 16px;
+      font-weight:700;
+      cursor:pointer;
+      transition: transform .12s ease, filter .12s ease, background .12s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active{ transform: scale(.98); }
+
+    .yes{
+      background: rgba(217,0,43,.22);
+      color: rgba(255,255,255,.95);
+      border:1px solid rgba(217,0,43,.45);
+      box-shadow: 0 0 0 1px rgba(217,0,43,.18), 0 12px 28px rgba(0,0,0,.35);
+    }
+    .yes:hover{ filter: brightness(1.08); transform: translateY(-1px); }
+
+    .no{
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.90);
+      border:1px solid rgba(255,255,255,.14);
+    }
+    .no:hover{ filter: brightness(1.06); }
+
+    .hidden{ display:none; }
+
+    /* Crawl (Star Wars vibe) */
+    .crawlWrap{
+      margin-top:14px;
+      height:300px;
+      perspective: 560px;
+      overflow:hidden;
+      border-top:1px solid rgba(255,255,255,.10);
+      padding-top:14px;
+      position:relative;
+    }
+    .crawl{
+      color: var(--yellow);
+      font-weight:800;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      text-align:justify;
+      transform-origin: 50% 100%;
+      transform: rotateX(24deg) translateY(80px);
+      animation: crawl 86s linear infinite;
+      font-size:19px;
+      line-height:1.75;
+      text-shadow: 0 0 18px rgba(217,0,43,.22);
+    }
+    @keyframes crawl{
+      0%{ transform: rotateX(24deg) translateY(240px); opacity:1; }
+      100%{ transform: rotateX(24deg) translateY(-1700px); opacity:.8; }
+    }
+
+    .resultTitle{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin:14px 0 4px;
+      font-size:18px;
+      font-weight:800;
+    }
+    .resultTitle .lightsaber{
+      width:36px;height:2px;border-radius:0;
+      background: var(--good);
+      box-shadow: 0 0 18px rgba(217,0,43,.65), 0 0 44px rgba(217,0,43,.25);
+    }
+
+    .mini{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      margin-top:10px;
+      flex-wrap:wrap;
+      opacity:.95;
+    }
+    .mini span{
+      font-size:22px;
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,.35));
+    }
+
+    .toast{
+      margin-top:12px;
+      text-align:center;
+      color: rgba(255,255,255,.86);
+      font-size:13px;
+      min-height:18px;
+    }
+
+    .footer{
+      margin-top:12px;
+      text-align:center;
+      font-size:12px;
+      color: rgba(255,255,255,.55);
+    }
+
+    /* Mobile: lepszy rozkład */
+    @media (max-width:420px){
+      h1{ font-size:20px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars"></canvas>
+  <div class="vignette"></div>
+
+  <div class="wrap">
+    <!-- EKRAN 1 -->
+    <section class="card" id="screenAsk" aria-live="polite">
+      <div class="badge"><span class="dot"></span> Szyfrowana transmisja z Gwiazdy Śmierci</div>
+      <div class="emoji" aria-hidden="true">
+        <img alt="" src="https://upload.wikimedia.org/wikipedia/commons/0/0d/Red_emblem_of_the_First_Galactic_Empire.png?20221221181641">
+      </div>
+      <h1>Czy zostaniesz moim Imperatorem?</h1>
+      <p class="subtitle">Stań u mojego boku. Razem weźmiemy galaktykę w swoje ręce.</p>
+
+      <div class="btns" id="btnArea">
+        <button class="yes" id="btnYes">Tak</button>
+        <button class="no dodge" id="btnNo">Nie</button>
+      </div>
+
+      <div class="toast" id="toast"></div>
+      <div class="footer">Władza jest kusząca. Ja też. 🖤</div>
+    </section>
+
+    <!-- EKRAN 2 (po kliknięciu TAK) -->
+    <section class="card hidden" id="screenYes" aria-live="polite">
+      <div class="badge"><span class="dot"></span> Status misji: ZATWIERDZONA</div>
+      <div class="emoji logo" aria-hidden="true">
+        <img alt="" src="https://chatgpt.com/backend-api/estuary/public_content/enc/eyJpZCI6Im1fNjk4MjkyODVhNjU4ODE5MWIyODIwZmMyYjlmMjgyZjA6ZmlsZV8wMDAwMDAwMDMwZGM3MWY4ODBmYzBkMmQ0NjIyZTZhNyIsInRzIjoiMjA0ODgiLCJwIjoicHlpIiwiY2lkIjoiMSIsInNpZyI6Ijc3OTljZDMwOTQ4MGQxZDRlZjc2ZGNjZWM5M2Q4MDQ2MzQ5ZTllMjIxODQ2ZmEwYTAzNmQ5YjEwZTdhYzExMTciLCJ2IjoiMCIsImdpem1vX2lkIjpudWxsLCJjcyI6bnVsbCwiY3AiOm51bGwsIm1hIjpudWxsfQ==">
+      </div>
+
+      <div class="resultTitle">
+        <div class="lightsaber" aria-hidden="true"></div>
+        Sojusz Ciemnej Strony potwierdzony
+        <div class="lightsaber" aria-hidden="true" style="background: var(--yellow); box-shadow: 0 0 18px rgba(255,232,31,.65), 0 0 44px rgba(255,232,31,.22);"></div>
+      </div>
+
+      <p class="subtitle" style="margin-top:10px;">
+        Mój Imperatorze, tej nocy galaktyka należy do nas. 🌌🖤
+      </p>
+
+      <div class="crawlWrap" aria-hidden="true">
+        <div class="crawl">
+          EPIZOD V: WALENTYNKI<br><br>
+          W odległej galaktyce, gdzie władza nie prosi o pozwolenie,
+          Imperator i Imperatorka spotkali się na jednej orbicie.
+          Nie przypadkiem, to było przeznaczenie, jakby moc od dawna prowadziła ich do siebie, a cała reszta była tylko drogą do tej jednej chwili. Gdy ich spojrzenia się zetknęły, reszta galaktyki straciła znaczenie.
+          <br><br>
+          Imperator wziął tron, jakby od zawsze był jego.
+          Imperatorka stanęła obok tak blisko, że jego władza i jej niezachwiana lojalność i oparcie zlały się w jedno.
+          <br><br>
+          A potem… potem zaczęła się część, której nikt nie widzi.
+          Światła przyciemniają się same, czas zwalnia, bo nie ma już po co pędzić, słowa stają się zbędne, wystarcza jeden gest, jeden dotyk.
+          <br><br>
+          Imperium obowiązków próbuje wkroczyć, ale drzwi pozostają zamknięte bo tej nocy władza ma dwie korony i nikt poza nimi nie ma prawa głosu.
+          <br><br>
+          A gdy w końcu galaktyka znów zacznie oddychać, będzie już za późno, by udowodnić, że to był tylko moment.
+          Imperium rzadko zaczyna się od armii. częściej od dwojga ludzi, którzy zdecydowali, że chcą wszystkiego.
+          <br><br>
+          Niech ciemna strona będzie z nami. 🖤
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <script>
+    // ====== Gwiazdy (canvas) ======
+    const canvas = document.getElementById('stars');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, stars;
+
+    function resize(){
+      W = canvas.width = Math.floor(window.innerWidth * devicePixelRatio);
+      H = canvas.height = Math.floor(window.innerHeight * devicePixelRatio);
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+
+      const count = Math.floor((window.innerWidth * window.innerHeight) / 9000);
+      stars = Array.from({length: Math.max(120, count)}, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: (Math.random() * 1.4 + 0.2) * devicePixelRatio,
+        a: Math.random() * 0.8 + 0.2,
+        tw: Math.random() * 0.02 + 0.003
+      }));
+    }
+
+    function tick(){
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = '#ffffff';
+
+      for(const s of stars){
+        s.a += (Math.random() - 0.5) * s.tw;
+        s.a = Math.max(0.12, Math.min(0.95, s.a));
+
+        ctx.globalAlpha = s.a;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(tick);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    tick();
+
+    // ====== Ekrany ======
+    const screenAsk = document.getElementById('screenAsk');
+    const screenYes = document.getElementById('screenYes');
+
+    const btnYes = document.getElementById('btnYes');
+    const btnNo  = document.getElementById('btnNo');
+    const toast = document.getElementById('toast');
+
+    function showYes(){
+      screenAsk.classList.add('hidden');
+      screenYes.classList.remove('hidden');
+    }
+
+    btnYes.addEventListener('click', showYes);
+
+    // ====== “Nie” ucieka ======
+    function dodge(){
+      toast.textContent = 'Imperium nie negocjuje.';
+      const x = Math.random() * 200 - 100;
+      const y = Math.random() * 200 - 100;
+      btnNo.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    btnNo.addEventListener('mouseenter', dodge);
+
+    // Na dotyk (telefon/tablet) — uciekaj przy pierwszym tapnięciu
+    btnNo.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      dodge();
+    }, {passive:false});
+  </script>
+</body>
+</html>
